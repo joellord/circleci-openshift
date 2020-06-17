@@ -1,6 +1,7 @@
 version: 2.1
 orbs:
   node: circleci/node@3.0.0
+  redhat-openshift: circleci/redhat-openshift@0.2.0
 jobs:
   build-docker-image:
     executor:
@@ -12,13 +13,24 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: false
       - run:
+          name: Setup Environment Variables
+          command: |
+            echo "export IMAGE_NAME=circle-ci" >> $BASH_ENV
+      - run:
           name: Build Docker image
           command: |
             export TAG=0.2.<< pipeline.number >>
-            export IMAGE_NAME=circle-ci
             docker build -t $DOCKER_LOGIN/$IMAGE_NAME -t $DOCKER_LOGIN/$IMAGE_NAME:$TAG .
             echo $DOCKER_PWD | docker login -u $DOCKER_LOGIN --password-stdin
             docker push $DOCKER_LOGIN/$IMAGE_NAME
+      - install-openshift-cli
+      - run: 
+          name: Import To OpenShift
+          command: |
+            oc login --token=$OC_TOKEN --server=https://api.$OC_SERVER:6443
+            oc project c-o
+            oc import-image docker.io/$DOCKER_LOGIN/$IMAGE_NAME
+
 workflows:
   build-the-things:
     jobs:
