@@ -27,7 +27,7 @@ jobs:
       - run: 
           name: Import To OpenShift
           command: |
-            oc login --token=$OC_TOKEN --server=https://api.$OC_SERVER:6443
+            oc login --insecure-skip-tls-verify=true --token=$OC_TOKEN --server=https://api.$OC_SERVER:6443
             oc project c-o
             oc import-image docker.io/$DOCKER_LOGIN/$IMAGE_NAME
 
